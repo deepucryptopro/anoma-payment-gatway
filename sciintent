@@ -1,0 +1,801 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+
+// Use lucide-react for icons. No need to install, it's available.
+const icons = {
+  Home: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  Check: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  Plus: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5v14"/></svg>,
+  Zap: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+  Wallet: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14a2 2 0 0 1 2 2v2"/><path d="M21 12V7H5a2 2 0 0 1 0-4h14a2 2 0 0 1 2 2v2"/><path d="M21 12V7H5a2 2 0 0 1 0-4h14a2 2 0 0 1 2 2v2"/><path d="M22 12h-8a2 2 0 0 0-2 2v2"/><path d="M22 12h-8a2 2 0 0 0-2 2v2"/><path d="M22 12h-8a2 2 0 0 0-2 2v2"/><path d="M22 12h-8a2 2 0 0 0-2 2v2"/><path d="M22 12h-8a2 2 0 0 0-2 2v2"/><rect width="20" height="14" x="2" y="5" rx="2"/></svg>,
+  Rocket: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5A2 2 0 0 0 5 22c0-2.5 4.5-5 4.5-5"/><path d="M12.5 14.5L16 18"/><path d="M15 11L18 14"/><path d="M18.5 8.5L22 12"/><path d="M19 5L21.5 7.5"/><path d="M17.5 3.5L20 6"/><path d="M13.5 7.5L16 10"/><path d="M14 4L16.5 6.5"/><path d="M12.5 0.5L15 3"/><path d="M11 7L13.5 9.5"/><path d="M10 2L12.5 4.5"/><path d="M8.5 5.5L11 8"/><path d="M7 1L9.5 3.5"/><path d="M5.5 4.5L8 7"/><path d="M4 8L6.5 10.5"/><path d="M15 2.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>,
+  Upload: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
+  PieChart: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>,
+  Globe: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+  Activity: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+  X: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  Loader: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+};
+
+// --- Simulated Backend and State Management (Replaces Node/Express/lowdb) ---
+
+// Mock data to simulate the database
+const MOCK_DB = {
+  intents: {
+    "intent-001": {
+      id: "intent-001",
+      title: "Cancer-Vaccine Research",
+      description: "Funding for pre-clinical trials of a novel mRNA cancer vaccine.",
+      goal: 1000,
+      minFunders: 3,
+      currentPledged: 0,
+      status: "active",
+      proofs: [],
+      bundles: []
+    }
+  },
+  pledges: {
+    "pledge-001": {
+      id: "pledge-001",
+      intentId: "intent-001",
+      amount: 400,
+      funder: "alice",
+      status: "active"
+    },
+    "pledge-002": {
+      id: "pledge-002",
+      intentId: "intent-001",
+      amount: 400,
+      funder: "bob",
+      status: "active"
+    }
+  },
+  bundles: {},
+  proofs: {},
+  liveFeed: [],
+};
+
+let nextId = 0;
+const generateId = (prefix) => `${prefix}-${String(nextId++).padStart(3, '0')}`;
+
+const addEvent = (db, event) => {
+  const newEvent = { ...event, id: generateId('event'), timestamp: new Date().toISOString() };
+  db.liveFeed.push(newEvent);
+  return db;
+};
+
+// Simulated Ethers and ZK Verifier
+const mockVerifyMessage = (message, signature) => {
+  // In a real app, this would use ethers.js to verify the signature.
+  // For the demo, we just return a "valid" or "invalid" signer address.
+  if (signature.startsWith("0xvalid")) {
+    return "0xVerifierAddress";
+  }
+  return "0xInvalidAddress";
+};
+
+const mockZkVerifier = (proof) => {
+  // A simple mock for a ZK proof verification
+  return proof.data === "proof-of-completion";
+};
+
+const useSciIntentBackend = () => {
+  const [db, setDb] = useState(MOCK_DB);
+
+  // Matchmaker Loop
+  useEffect(() => {
+    const matchmakerInterval = setInterval(() => {
+      const updatedDb = { ...db };
+      const intents = Object.values(updatedDb.intents);
+
+      intents.forEach(intent => {
+        if (intent.status === "active") {
+          const pledgesForIntent = Object.values(updatedDb.pledges).filter(p => p.intentId === intent.id);
+          const totalPledged = pledgesForIntent.reduce((sum, p) => sum + p.amount, 0);
+
+          if (totalPledged >= intent.goal && pledgesForIntent.length >= intent.minFunders) {
+            intent.status = "matched";
+            const bundleId = generateId('bundle');
+            updatedDb.bundles[bundleId] = {
+              id: bundleId,
+              intentId: intent.id,
+              pledges: pledgesForIntent.map(p => p.id),
+              status: "pending_proof",
+              escrowedFunds: totalPledged,
+              timestamp: new Date().toISOString()
+            };
+            updatedDb.intents[intent.id] = intent;
+            addEvent(updatedDb, {
+              type: "bundle_created",
+              message: `Bundle #${bundleId} created for intent "${intent.title}". Funds escrowed.`
+            });
+          }
+        }
+      });
+      setDb(updatedDb);
+    }, 5000); // Run every 5 seconds
+
+    return () => clearInterval(matchmakerInterval);
+  }, [db]);
+
+  // Solver Loop
+  useEffect(() => {
+    const solverInterval = setInterval(() => {
+      const updatedDb = { ...db };
+      const proofs = Object.values(updatedDb.proofs).filter(p => p.status === "pending");
+
+      proofs.forEach(proof => {
+        const isValidSignature = mockVerifyMessage(proof.message, proof.signature) !== "0xInvalidAddress";
+        const isValidProof = mockZkVerifier(proof);
+
+        if (isValidSignature && isValidProof) {
+          proof.status = "verified";
+          updatedDb.intents[proof.intentId].status = "completed";
+          addEvent(updatedDb, {
+            type: "proof_verified",
+            message: `Proof #${proof.id} for intent "${updatedDb.intents[proof.intentId].title}" verified. Funds released.`
+          });
+        } else {
+          proof.status = "failed";
+          addEvent(updatedDb, {
+            type: "proof_failed",
+            message: `Proof #${proof.id} for intent "${updatedDb.intents[proof.intentId].title}" failed verification.`
+          });
+        }
+      });
+      setDb(updatedDb);
+    }, 7000); // Run every 7 seconds
+
+    return () => clearInterval(solverInterval);
+  }, [db]);
+
+  // --- API Functions (Simulated REST Endpoints) ---
+
+  const createIntent = useCallback((newIntent) => {
+    const intentId = generateId('intent');
+    const updatedDb = { ...db };
+    updatedDb.intents[intentId] = { ...newIntent, id: intentId, status: "active", currentPledged: 0, proofs: [], bundles: [] };
+    setDb(addEvent(updatedDb, { type: "intent_created", message: `New intent "${newIntent.title}" created.` }));
+  }, [db]);
+
+  const pledge = useCallback((intentId, amount, funder) => {
+    const updatedDb = { ...db };
+    const intent = updatedDb.intents[intentId];
+    if (!intent || intent.status !== "active") return false;
+
+    const pledgeId = generateId('pledge');
+    updatedDb.pledges[pledgeId] = { id: pledgeId, intentId, amount, funder, status: "active" };
+    intent.currentPledged += amount;
+    setDb(addEvent(updatedDb, { type: "pledge", message: `${funder} pledged ${amount} to "${intent.title}".` }));
+    return true;
+  }, [db]);
+
+  const uploadProof = useCallback((intentId, message, signature, proofData) => {
+    const updatedDb = { ...db };
+    const intent = updatedDb.intents[intentId];
+    if (!intent || intent.status !== "matched") return false;
+
+    const proofId = generateId('proof');
+    updatedDb.proofs[proofId] = {
+      id: proofId,
+      intentId,
+      message,
+      signature,
+      data: proofData,
+      status: "pending"
+    };
+    intent.proofs.push(proofId);
+    setDb(addEvent(updatedDb, {
+      type: "proof_uploaded",
+      message: `Proof #${proofId} for intent "${intent.title}" uploaded. Pending verification.`
+    }));
+    return true;
+  }, [db]);
+
+  // Helper functions for the UI
+  const getPledgesForIntent = useCallback((intentId) => {
+    return Object.values(db.pledges).filter(p => p.intentId === intentId);
+  }, [db]);
+
+  const getBundlesForIntent = useCallback((intentId) => {
+    return Object.values(db.bundles).filter(b => b.intentId === intentId);
+  }, [db]);
+
+  const getProofsForIntent = useCallback((intentId) => {
+    return Object.values(db.proofs).filter(p => p.intentId === intentId);
+  }, [db]);
+
+  return {
+    intents: Object.values(db.intents),
+    pledges: Object.values(db.pledges),
+    bundles: Object.values(db.bundles),
+    proofs: Object.values(db.proofs),
+    liveFeed: db.liveFeed,
+    createIntent,
+    pledge,
+    uploadProof,
+    getPledgesForIntent,
+    getBundlesForIntent,
+    getProofsForIntent,
+  };
+};
+
+// --- Frontend UI Components ---
+const PageContainer = ({ children }) => (
+  <div className="container mx-auto p-4 md:p-8 space-y-8">
+    {children}
+  </div>
+);
+
+const Card = ({ children, className = '' }) => (
+  <div className={`bg-white rounded-xl shadow-lg p-6 ${className}`}>
+    {children}
+  </div>
+);
+
+const Button = ({ children, onClick, disabled = false, className = '' }) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    className={`px-6 py-3 rounded-full font-semibold transition-all duration-200 ${
+      disabled ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-fuchsia-600 text-white hover:bg-fuchsia-700'
+    } ${className}`}
+  >
+    {children}
+  </button>
+);
+
+const StepIndicator = ({ step, totalSteps }) => (
+  <div className="flex items-center justify-center space-x-2">
+    {Array.from({ length: totalSteps }).map((_, i) => (
+      <div key={i} className={`h-2 w-8 rounded-full transition-all ${i + 1 <= step ? 'bg-fuchsia-600' : 'bg-gray-300'}`}></div>
+    ))}
+  </div>
+);
+
+const LandingPage = ({ setPage }) => (
+  <div className="flex flex-col items-center text-center py-20">
+    <h1 className="text-5xl font-extrabold tracking-tight text-gray-900 sm:text-6xl lg:text-7xl">
+      <span className="bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-500 to-purple-600">SciIntent</span>
+    </h1>
+    <p className="mt-4 text-xl text-gray-500 max-w-2xl">
+      A decentralized science (DeSci) protocol for funding research with intent-based architecture.
+      Fund research, prove results, and get rewarded.
+    </p>
+    <div className="mt-10 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+      <Button onClick={() => setPage('create')}>
+        Create an Intent
+      </Button>
+      <Button onClick={() => setPage('browse')} className="bg-gray-200 text-gray-800 hover:bg-gray-300">
+        Browse Intents
+      </Button>
+    </div>
+  </div>
+);
+
+const BrowsePage = ({ intents, setPage, setSelectedIntentId }) => (
+  <PageContainer>
+    <h1 className="text-3xl font-bold text-gray-900">Browse Intents</h1>
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {intents.length === 0 ? (
+        <p className="text-gray-500 col-span-full text-center">No intents found. Be the first to create one!</p>
+      ) : (
+        intents.map((intent) => {
+          const progress = (intent.currentPledged / intent.goal) * 100;
+          return (
+            <Card key={intent.id} className="cursor-pointer hover:shadow-xl transition-shadow duration-300" onClick={() => {
+              setSelectedIntentId(intent.id);
+              setPage('detail');
+            }}>
+              <h2 className="text-2xl font-bold text-fuchsia-600 mb-2">{intent.title}</h2>
+              <p className="text-sm text-gray-500 mb-4">{intent.description}</p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-gray-700">Funds Pledged:</span>
+                  <span className="text-gray-900">${intent.currentPledged} / ${intent.goal}</span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-fuchsia-500 transition-all duration-500 ease-out" style={{ width: `${Math.min(100, progress)}%` }}></div>
+                </div>
+                <div className="flex items-center justify-between text-xs text-gray-500 pt-1">
+                  <span>Status: <span className={`font-semibold ${intent.status === 'completed' ? 'text-green-600' : intent.status === 'matched' ? 'text-amber-500' : 'text-fuchsia-500'}`}>{intent.status}</span></span>
+                  <span>Min Funders: {intent.minFunders}</span>
+                </div>
+              </div>
+            </Card>
+          );
+        })
+      )}
+    </div>
+  </PageContainer>
+);
+
+const IntentDetail = ({ intent, pledges, bundles, proofs, setPage, onPledge, onUploadProof }) => {
+  const [isPledgeModalOpen, setPledgeModalOpen] = useState(false);
+  const [isVerifierModalOpen, setVerifierModalOpen] = useState(false);
+
+  const totalPledged = pledges.reduce((sum, p) => sum + p.amount, 0);
+  const progress = (totalPledged / intent.goal) * 100;
+
+  const PledgeModal = () => {
+    const [amount, setAmount] = useState(0);
+    const [funder, setFunder] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handlePledge = () => {
+      if (amount <= 0 || !funder) return;
+      setIsLoading(true);
+      setTimeout(() => {
+        onPledge(intent.id, parseFloat(amount), funder);
+        setIsLoading(false);
+        setPledgeModalOpen(false);
+      }, 1000);
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full relative">
+          <button onClick={() => setPledgeModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <icons.X />
+          </button>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Pledge to this Intent</h2>
+          <p className="text-sm text-gray-600 mb-4">Enter the amount you wish to contribute and your name.</p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Your Name</label>
+              <input
+                type="text"
+                value={funder}
+                onChange={(e) => setFunder(e.target.value)}
+                placeholder="e.g., Jane Doe"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-fuchsia-500 focus:ring-fuchsia-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Amount ($)</label>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="e.g., 250"
+                min="1"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-fuchsia-500 focus:ring-fuchsia-500"
+              />
+            </div>
+          </div>
+          <Button onClick={handlePledge} className="mt-6 w-full" disabled={isLoading || amount <= 0 || !funder}>
+            {isLoading ? <icons.Loader className="mx-auto" /> : `Pledge $${amount}`}
+          </Button>
+        </Card>
+      </div>
+    );
+  };
+
+  const VerifierModal = () => {
+    const [proof, setProof] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleUpload = () => {
+      if (!proof) return;
+      setIsLoading(true);
+      setTimeout(() => {
+        onUploadProof(intent.id, "Verification message for the solver.", "0xvalid-signature", { data: proof });
+        setIsLoading(false);
+        setVerifierModalOpen(false);
+      }, 1500);
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full relative">
+          <button onClick={() => setVerifierModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <icons.X />
+          </button>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Upload a Proof</h2>
+          <p className="text-sm text-gray-600 mb-4">Simulate uploading a ZK proof of completion.</p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Proof Data</label>
+              <textarea
+                value={proof}
+                onChange={(e) => setProof(e.target.value)}
+                rows="4"
+                placeholder="Enter proof data here (e.g., proof-of-completion)"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-fuchsia-500 focus:ring-fuchsia-500"
+              />
+            </div>
+          </div>
+          <Button onClick={handleUpload} className="mt-6 w-full" disabled={isLoading || !proof}>
+            {isLoading ? <icons.Loader className="mx-auto" /> : 'Submit Proof'}
+          </Button>
+        </Card>
+      </div>
+    );
+  };
+
+  const statusColor = (status) => {
+    switch (status) {
+      case 'completed': return 'text-green-600';
+      case 'matched': return 'text-amber-500';
+      case 'active': return 'text-fuchsia-500';
+      default: return 'text-gray-500';
+    }
+  };
+
+  return (
+    <PageContainer>
+      {isPledgeModalOpen && <PledgeModal />}
+      {isVerifierModalOpen && <VerifierModal />}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-3xl font-bold text-gray-900">{intent.title}</h1>
+        <Button onClick={() => setPage('browse')} className="bg-gray-200 text-gray-800 hover:bg-gray-300">
+          Back to Browse
+        </Button>
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 space-y-4">
+          <p className="text-gray-600">{intent.description}</p>
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center space-y-4 md:space-y-0 md:space-x-4">
+            <div className="space-y-2 w-full">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-gray-700">Pledged:</span>
+                <span className="text-gray-900">${totalPledged} / ${intent.goal}</span>
+              </div>
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-full bg-fuchsia-500 transition-all duration-500 ease-out" style={{ width: `${Math.min(100, progress)}%` }}></div>
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 pt-1">
+                <span>Min Funders: {intent.minFunders}</span>
+                <span>Pledges: {pledges.length}</span>
+              </div>
+            </div>
+            <div className="flex space-x-2 w-full md:w-auto">
+              {intent.status === 'active' && (
+                <Button onClick={() => setPledgeModalOpen(true)} className="w-full md:w-auto">
+                  <icons.Plus className="inline-block mr-2" />
+                  Pledge
+                </Button>
+              )}
+              {intent.status === 'matched' && (
+                <Button onClick={() => setVerifierModalOpen(true)} className="w-full md:w-auto bg-green-600 hover:bg-green-700">
+                  <icons.Check className="inline-block mr-2" />
+                  Upload Proof
+                </Button>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        <Card className="lg:col-span-1">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">Intent Status</h3>
+          <p className={`text-2xl font-bold uppercase ${statusColor(intent.status)}`}>{intent.status}</p>
+          <p className="text-sm text-gray-500 mt-2">
+            {intent.status === 'active' && "This intent is actively accepting pledges."}
+            {intent.status === 'matched' && "The funding goal has been met. Awaiting proof of completion."}
+            {intent.status === 'completed' && "The proof has been verified. Funds have been released."}
+          </p>
+        </Card>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card>
+          <h3 className="text-xl font-bold text-gray-800 mb-4">Pledges</h3>
+          {pledges.length === 0 ? (
+            <p className="text-gray-500">No pledges yet. Be the first!</p>
+          ) : (
+            <ul className="space-y-2">
+              {pledges.map(p => (
+                <li key={p.id} className="flex items-center justify-between text-gray-700 text-sm bg-gray-100 p-3 rounded-lg">
+                  <span>{p.funder}</span>
+                  <span className="font-semibold">${p.amount}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card>
+          <h3 className="text-xl font-bold text-gray-800 mb-4">Bundles & Proofs</h3>
+          <div className="space-y-4">
+            {bundles.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-gray-700">Bundles ({bundles.length})</h4>
+                <ul className="space-y-2">
+                  {bundles.map(b => (
+                    <li key={b.id} className="text-sm bg-gray-100 p-3 rounded-lg">
+                      <span className="font-semibold">{b.id}</span>
+                      <p className="text-xs text-gray-500">Status: {b.status} | Escrowed: ${b.escrowedFunds}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {proofs.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-gray-700">Proofs ({proofs.length})</h4>
+                <ul className="space-y-2">
+                  {proofs.map(p => (
+                    <li key={p.id} className="text-sm bg-gray-100 p-3 rounded-lg">
+                      <span className="font-semibold">{p.id}</span>
+                      <p className={`text-xs ${p.status === 'verified' ? 'text-green-600' : p.status === 'failed' ? 'text-red-600' : 'text-amber-500'}`}>Status: {p.status}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+          {bundles.length === 0 && proofs.length === 0 && (
+            <p className="text-gray-500">No bundles or proofs yet.</p>
+          )}
+        </Card>
+      </div>
+    </PageContainer>
+  );
+};
+
+const CreateIntentPage = ({ setPage, onCreateIntent }) => {
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    goal: 0,
+    minFunders: 0
+  });
+
+  const handleChange = (e) => {
+    const { name, value, type } = e.target;
+    setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseFloat(value) : value }));
+  };
+
+  const handleCreate = () => {
+    onCreateIntent(formData);
+    setPage('dashboard');
+  };
+
+  const isStep1Valid = formData.title && formData.description;
+  const isStep2Valid = formData.goal > 0 && formData.minFunders > 0;
+
+  return (
+    <PageContainer>
+      <h1 className="text-3xl font-bold text-gray-900 mb-4">Create a New Intent</h1>
+      <Card>
+        <StepIndicator step={step} totalSteps={2} />
+        <div className="mt-8">
+          {step === 1 && (
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Intent Title</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="e.g., Cancer-Vaccine Research"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows="4"
+                  placeholder="Describe your research project and its funding needs."
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                ></textarea>
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={() => setStep(2)} disabled={!isStep1Valid}>Next</Button>
+              </div>
+            </div>
+          )}
+          {step === 2 && (
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Funding Goal ($)</label>
+                <input
+                  type="number"
+                  name="goal"
+                  value={formData.goal}
+                  onChange={handleChange}
+                  min="1"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Minimum Funders</label>
+                <input
+                  type="number"
+                  name="minFunders"
+                  value={formData.minFunders}
+                  onChange={handleChange}
+                  min="1"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                />
+              </div>
+              <div className="flex justify-between">
+                <Button onClick={() => setStep(1)} className="bg-gray-200 text-gray-800 hover:bg-gray-300">Back</Button>
+                <Button onClick={handleCreate} disabled={!isStep2Valid}>Create Intent</Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
+    </PageContainer>
+  );
+};
+
+const DashboardPage = ({ intents, pledges, bundles, proofs }) => {
+  const myIntents = intents.filter(i => true); // In a real app, this would filter by user
+  const myPledges = pledges.filter(p => p.funder === "bob"); // Simulating Bob's pledges
+
+  const DashboardSection = ({ title, children }) => (
+    <Card>
+      <h2 className="text-xl font-bold text-gray-800 mb-4">{title}</h2>
+      {children}
+    </Card>
+  );
+
+  return (
+    <PageContainer>
+      <h1 className="text-3xl font-bold text-gray-900 mb-4">My Dashboard</h1>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <DashboardSection title="My Intents">
+          {myIntents.length === 0 ? <p className="text-gray-500">You haven't created any intents yet.</p> :
+            <ul className="space-y-2">
+              {myIntents.map(intent => (
+                <li key={intent.id} className="text-sm bg-gray-100 p-3 rounded-lg flex items-center justify-between">
+                  <span>{intent.title}</span>
+                  <span className={`font-semibold ${intent.status === 'completed' ? 'text-green-600' : intent.status === 'matched' ? 'text-amber-500' : 'text-fuchsia-500'}`}>{intent.status}</span>
+                </li>
+              ))}
+            </ul>
+          }
+        </DashboardSection>
+        <DashboardSection title="My Pledges">
+          {myPledges.length === 0 ? <p className="text-gray-500">You haven't made any pledges yet.</p> :
+            <ul className="space-y-2">
+              {myPledges.map(pledge => (
+                <li key={pledge.id} className="text-sm bg-gray-100 p-3 rounded-lg flex items-center justify-between">
+                  <span>{pledge.funder} pledged ${pledge.amount}</span>
+                  <span className="text-gray-500">to {intents.find(i => i.id === pledge.intentId)?.title}</span>
+                </li>
+              ))}
+            </ul>
+          }
+        </DashboardSection>
+        <DashboardSection title="Proofs Submitted">
+          {proofs.length === 0 ? <p className="text-gray-500">No proofs submitted.</p> :
+            <ul className="space-y-2">
+              {proofs.map(proof => (
+                <li key={proof.id} className="text-sm bg-gray-100 p-3 rounded-lg flex items-center justify-between">
+                  <span>Proof #{proof.id}</span>
+                  <span className={`font-semibold ${proof.status === 'verified' ? 'text-green-600' : 'text-amber-500'}`}>{proof.status}</span>
+                </li>
+              ))}
+            </ul>
+          }
+        </DashboardSection>
+      </div>
+    </PageContainer>
+  );
+};
+
+const ExplorerPage = ({ liveFeed }) => {
+  return (
+    <PageContainer>
+      <h1 className="text-3xl font-bold text-gray-900 mb-4">Blockchain Explorer & Live Feed</h1>
+      <Card>
+        <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+          <icons.Activity className="mr-2 text-fuchsia-600" />
+          Live Activity Log
+        </h2>
+        <div className="h-96 overflow-y-auto space-y-2 bg-gray-50 p-4 rounded-lg">
+          {liveFeed.length === 0 ? (
+            <p className="text-gray-500 text-center">No activity yet. Wait for a few moments...</p>
+          ) : (
+            [...liveFeed].reverse().map(event => (
+              <div key={event.id} className="text-sm p-3 rounded-lg bg-white shadow-sm border border-gray-200">
+                <p className="font-semibold text-gray-800">{event.message}</p>
+                <p className="text-xs text-gray-500 mt-1">{new Date(event.timestamp).toLocaleString()}</p>
+              </div>
+            ))
+          )}
+        </div>
+      </Card>
+    </PageContainer>
+  );
+};
+
+// --- Main App Component ---
+export default function App() {
+  const [page, setPage] = useState('landing');
+  const [selectedIntentId, setSelectedIntentId] = useState(null);
+  const {
+    intents,
+    pledges,
+    bundles,
+    proofs,
+    liveFeed,
+    createIntent,
+    pledge,
+    uploadProof,
+    getPledgesForIntent,
+    getBundlesForIntent,
+    getProofsForIntent,
+  } = useSciIntentBackend();
+
+  const selectedIntent = useMemo(() => intents.find(i => i.id === selectedIntentId), [intents, selectedIntentId]);
+  const pledgesForIntent = useMemo(() => selectedIntent ? getPledgesForIntent(selectedIntent.id) : [], [selectedIntent, getPledgesForIntent]);
+  const bundlesForIntent = useMemo(() => selectedIntent ? getBundlesForIntent(selectedIntent.id) : [], [selectedIntent, getBundlesForIntent]);
+  const proofsForIntent = useMemo(() => selectedIntent ? getProofsForIntent(selectedIntent.id) : [], [selectedIntent, getProofsForIntent]);
+
+  const navigation = [
+    { name: 'Home', icon: icons.Home, page: 'landing' },
+    { name: 'Browse', icon: icons.Globe, page: 'browse' },
+    { name: 'Create Intent', icon: icons.Plus, page: 'create' },
+    { name: 'Dashboard', icon: icons.PieChart, page: 'dashboard' },
+    { name: 'Explorer', icon: icons.Activity, page: 'explorer' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-100 font-sans text-gray-900 antialiased">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+      `}</style>
+      <script src="https://cdn.tailwindcss.com"></script>
+
+      {/* Navigation */}
+      <nav className="bg-white shadow-md sticky top-0 z-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex">
+              <div className="flex-shrink-0 flex items-center">
+                <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-500 to-purple-600">SciIntent</span>
+              </div>
+              <div className="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">
+                {navigation.map((item) => (
+                  <button
+                    key={item.name}
+                    onClick={() => {
+                      setPage(item.page);
+                      setSelectedIntentId(null);
+                    }}
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
+                      page === item.page
+                        ? 'border-fuchsia-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    }`}
+                  >
+                    <item.icon className="h-5 w-5 mr-2" />
+                    {item.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <main className="py-10">
+        {page === 'landing' && <LandingPage setPage={setPage} />}
+        {page === 'browse' && <BrowsePage intents={intents} setPage={setPage} setSelectedIntentId={setSelectedIntentId} />}
+        {page === 'create' && <CreateIntentPage setPage={setPage} onCreateIntent={createIntent} />}
+        {page === 'detail' && selectedIntent && (
+          <IntentDetail
+            intent={selectedIntent}
+            pledges={pledgesForIntent}
+            bundles={bundlesForIntent}
+            proofs={proofsForIntent}
+            setPage={setPage}
+            onPledge={pledge}
+            onUploadProof={uploadProof}
+          />
+        )}
+        {page === 'dashboard' && <DashboardPage intents={intents} pledges={pledges} bundles={bundles} proofs={proofs} />}
+        {page === 'explorer' && <ExplorerPage liveFeed={liveFeed} />}
+      </main>
+    </div>
+  );
+}
